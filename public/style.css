@@ -8,6 +8,10 @@ button:focus, input:focus {
     outline: none;
 }
 
+[vue-cloak] {
+    display: none !important;
+}
+
 .btn {
     background-color: #F08080;
     border-radius: 2px;

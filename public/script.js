@@ -1,3 +1,5 @@
+const LOAD_NUM = 10;
+
 new Vue({
     el: '#app',
     data: {
@@ -8,6 +10,7 @@ new Vue({
             // { id: 3, title: 'item 3', price: 9.97},
         ],
         cart: [],
+        results: [],
         new_search: 'poster',
         last_search: '',
         loading: false
@@ -33,20 +36,29 @@ new Vue({
                 });
             }
         },
+        appendItems: function() {
+            if (this.items.length < this.results.length) {
+                let append = this.results.slice(this.items.length, this.items.length + LOAD_NUM);
+                this.items = this.items.concat(append);
+            }
+        },
         onSubmit: function() {
-            this.items = [];
-            this.loading = true;
-            this.$http
-            .get(`/search/${this.new_search}`)
-            .then(function({data}){
-                this.items = data;
-                this.items.map(item => {
-                    item.price = (Math.random()*10) + (Math.random()*10);
-                    return item;
-                })
-                this.last_search = this.new_search;
-                this.loading = false;
-            });
+            if (this.new_search.length) {
+                this.items = [];
+                this.loading = true;
+                this.$http
+                    .get(`/search/${this.new_search}`)
+                    .then(function({data}) {
+                        this.results = data;
+                        this.items = this.results.slice(1,LOAD_NUM);
+                        this.results.map(result => {
+                            result.price = (Math.random()*10) + (Math.random()*10);
+                            return result;
+                        })
+                        this.last_search = this.new_search;
+                        this.loading = false;
+                });
+            }
         },
         inc: function(item) {
             item.qty++;
@@ -70,7 +82,19 @@ new Vue({
             return `$${price.toFixed(2)}`;
         }
     },
+    computed: {
+        noMoreItems: function() {
+            return (this.items.length && this.items.length === this.results.length);
+        }
+    },
     mounted: function() {
         this.onSubmit();
+
+        let vueInstance = this;
+        let elem = document.querySelector('#product-list-bottom');
+        let watcher = scrollMonitor.create(elem);
+        watcher.enterViewport(function() {
+            vueInstance.appendItems();
+        });
     }
 });
